@@ -1,0 +1,19 @@
+rules:
+  - name: high_memory_usage
+    metric: jvm.memory.used
+    condition: ">0.9"
+    duration: 5m
+    severity: critical
+    channels:
+      - email
+      - slack
+    message: "High memory usage detected: {value}%"
+
+  - name: high_error_rate
+    metric: command.errors
+    condition: ">0.05"
+    duration: 1m
+    severity: warning
+    channels:
+      - slack
+    message: "High error rate detected: {value}%" 
