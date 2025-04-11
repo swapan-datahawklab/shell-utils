@@ -110,3 +110,6 @@ shdemmo-bundle-windows/
 # Keep templates and scripts
 !create-distribution/*.template
 !create-distribution/*.sh 
+.specstory/history/2025-04-08_08-47-runtime-analysis-and-command-reporting-solution.md
+
+.specstory

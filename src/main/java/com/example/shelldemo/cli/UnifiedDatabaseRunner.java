@@ -148,8 +148,8 @@ public class UnifiedDatabaseRunner implements Callable<Integer> {
                 return runStoredProc();
             }
         } catch (Exception e) {
-            if (e instanceof SQLException) {
-                log.error(formatOracleError((SQLException) e));
+            if (e instanceof SQLException sqlexception) {
+                log.error(formatOracleError(sqlexception));
             } else {
                 log.error("Error: {}", e.getMessage());
             }
@@ -187,58 +187,53 @@ public class UnifiedDatabaseRunner implements Callable<Integer> {
         try (BufferedReader reader = new BufferedReader(new FileReader(scriptFile))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                line = line.trim();
-                
-                // Skip empty lines
-                if (line.isEmpty()) {
-                    continue;
-                }
-                
-                // Handle multiline comments
-                if (!inMultilineComment && line.startsWith("/*")) {
-                    inMultilineComment = true;
-                    continue;
-                }
-                if (inMultilineComment) {
-                    if (line.contains("*/")) {
-                        inMultilineComment = false;
-                    }
-                    continue;
-                }
-                
-                // Skip single-line comments
-                if (line.startsWith("--") || line.startsWith("//")) {
-                    continue;
-                }
-                
-                // Remove inline comments
-                int commentStart = line.indexOf("--");
-                if (commentStart >= 0) {
-                    line = line.substring(0, commentStart).trim();
-                }
+                line = processLine(line, inMultilineComment);
+                if (line == null) continue;
                 
                 currentStatement.append(line).append("\n");
                 
-                // Check for statement termination
                 if (line.endsWith(";")) {
-                    String stmt = currentStatement.toString().trim();
-                    // Remove trailing semicolon and add to list if not empty
-                    stmt = stmt.substring(0, stmt.length() - 1).trim();
-                    if (!stmt.isEmpty()) {
-                        statements.add(stmt);
-                    }
+                    addStatement(statements, currentStatement);
                     currentStatement.setLength(0);
                 }
             }
             
-            // Handle last statement if it exists (without semicolon)
-            String lastStmt = currentStatement.toString().trim();
-            if (!lastStmt.isEmpty()) {
-                statements.add(lastStmt);
-            }
+            addStatement(statements, currentStatement);
         }
         
         return statements;
+    }
+
+    private String processLine(String line, boolean inMultilineComment) {
+        line = line.trim();
+        if (line.isEmpty()) return null;
+        
+        if (inMultilineComment) {
+            return null;
+        }
+        
+        if (line.startsWith("/*")) {
+            return null;
+        }
+        
+        if (line.startsWith("--") || line.startsWith("//")) {
+            return null;
+        }
+        
+        int commentStart = line.indexOf("--");
+        return commentStart >= 0 ? line.substring(0, commentStart).trim() : line;
+    }
+
+    private void addStatement(List<String> statements, StringBuilder currentStatement) {
+        String stmt = currentStatement.toString().trim();
+        if (!stmt.isEmpty()) {
+            if (stmt.endsWith(";")) {
+                stmt = stmt.substring(0, stmt.length() - 1).trim();
+            }
+            if (!stmt.isEmpty()) {
+                statements.add(stmt);
+            }
+        }
     }
 
     private String formatOracleError(SQLException e) {
@@ -356,47 +351,61 @@ public class UnifiedDatabaseRunner implements Callable<Integer> {
 
     private List<ProcedureParam> parseParameters() {
         List<ProcedureParam> params = new ArrayList<>();
-
-        // Add input parameters
+        
         if (inputParams != null) {
-            // Split on comma but not within TO_DATE function
-            List<String> paramPairs = splitPreservingFunctions(inputParams);
-            for (String paramPair : paramPairs) {
-                String[] parts = paramPair.split(":", 3); // Limit to 3 parts
-                if (parts.length != 3) {
-                    throw new IllegalArgumentException("Invalid parameter format: " + paramPair + 
-                        ". Expected format: name:type:value");
-                }
-                params.add(new ProcedureParam(parts[0], parts[1], parts[2]));
-            }
+            params.addAll(parseInputParameters());
         }
-
-        // Add output parameters
+        
         if (outputParams != null) {
-            String[] paramPairs = outputParams.split(",");
-            for (String paramPair : paramPairs) {
-                String[] parts = paramPair.split(":");
-                if (parts.length != 2) {
-                    throw new IllegalArgumentException("Invalid output parameter format: " + paramPair + 
-                        ". Expected format: name:type");
-                }
-                params.add(new ProcedureParam(parts[0], parts[1], null));
-            }
+            params.addAll(parseOutputParameters());
         }
-
-        // Add input/output parameters
+        
         if (ioParams != null) {
-            String[] paramPairs = ioParams.split(",");
-            for (String paramPair : paramPairs) {
-                String[] parts = paramPair.split(":");
-                if (parts.length != 3) {
-                    throw new IllegalArgumentException("Invalid IO parameter format: " + paramPair + 
-                        ". Expected format: name:type:value");
-                }
-                params.add(new ProcedureParam(parts[0], parts[1], parts[2]));
-            }
+            params.addAll(parseIoParameters());
         }
+        
+        return params;
+    }
 
+    private List<ProcedureParam> parseInputParameters() {
+        List<ProcedureParam> params = new ArrayList<>();
+        List<String> paramPairs = splitPreservingFunctions(inputParams);
+        for (String paramPair : paramPairs) {
+            String[] parts = paramPair.split(":", 3);
+            if (parts.length != 3) {
+                throw new IllegalArgumentException("Invalid parameter format: " + paramPair + 
+                    ". Expected format: name:type:value");
+            }
+            params.add(new ProcedureParam(parts[0], parts[1], parts[2]));
+        }
+        return params;
+    }
+
+    private List<ProcedureParam> parseOutputParameters() {
+        List<ProcedureParam> params = new ArrayList<>();
+        String[] paramPairs = outputParams.split(",");
+        for (String paramPair : paramPairs) {
+            String[] parts = paramPair.split(":");
+            if (parts.length != 2) {
+                throw new IllegalArgumentException("Invalid output parameter format: " + paramPair + 
+                    ". Expected format: name:type");
+            }
+            params.add(new ProcedureParam(parts[0], parts[1], null));
+        }
+        return params;
+    }
+
+    private List<ProcedureParam> parseIoParameters() {
+        List<ProcedureParam> params = new ArrayList<>();
+        String[] paramPairs = ioParams.split(",");
+        for (String paramPair : paramPairs) {
+            String[] parts = paramPair.split(":");
+            if (parts.length != 3) {
+                throw new IllegalArgumentException("Invalid IO parameter format: " + paramPair + 
+                    ". Expected format: name:type:value");
+            }
+            params.add(new ProcedureParam(parts[0], parts[1], parts[2]));
+        }
         return params;
     }
 

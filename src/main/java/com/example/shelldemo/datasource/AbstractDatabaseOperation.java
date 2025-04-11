@@ -43,8 +43,9 @@ public abstract class AbstractDatabaseOperation {
             this.connection = createDatabaseConnection(config);
             log.debug("Created database operation with new connection for {}", config.getHost());
         } catch (SQLException e) {
-            log.error("Failed to create database connection for operation", e);
-            throw new SQLException("Failed to create database connection for operation: " + e.getMessage(), e);
+            String msg = String.format("Failed to create database connection for host %s: %s", config.getHost(), e.getMessage());
+            log.error(msg, e);
+            throw new SQLException(msg, e);
         }
     }
     
@@ -101,8 +102,9 @@ public abstract class AbstractDatabaseOperation {
         try (Connection conn = connection.getConnection()) {
             return callback.execute(conn);
         } catch (SQLException e) {
-            log.error("Database operation failed", e);
-            throw new SQLException("Database operation failed: " + e.getMessage(), e);
+            String msg = String.format("Database operation failed on %s: %s", connection.getClass().getSimpleName(), e.getMessage());
+            log.error("{} - Connection details: {}", msg, connection.toString(), e);
+            throw new SQLException(msg, e);
         }
     }
     
@@ -133,20 +135,25 @@ public abstract class AbstractDatabaseOperation {
             if (conn != null) {
                 try {
                     conn.rollback();
-                    log.warn("Transaction rolled back due to exception", e);
+                    log.warn("Transaction rolled back due to exception - Connection details: {}", connection.toString(), e);
                 } catch (SQLException rollbackEx) {
-                    log.error("Failed to rollback transaction", rollbackEx);
+                    String msg = String.format("Failed to rollback transaction: %s", rollbackEx.getMessage());
+                    log.error("{} - Connection details: {}", msg, connection.toString(), rollbackEx);
+                    throw new SQLException(msg, rollbackEx);
                 }
             }
-            log.error("Transaction failed", e);
-            throw new SQLException("Transaction failed: " + e.getMessage(), e);
+            String msg = String.format("Transaction failed on %s: %s", connection.getClass().getSimpleName(), e.getMessage());
+            log.error("{} - Connection details: {}", msg, connection.toString(), e);
+            throw new SQLException(msg, e);
         } finally {
             if (conn != null) {
                 try {
                     conn.setAutoCommit(originalAutoCommit);
                     conn.close();
                 } catch (SQLException closeEx) {
-                    log.warn("Failed to close connection", closeEx);
+                    String msg = String.format("Failed to close connection: %s", closeEx.getMessage());
+                    log.error("{} - Connection details: {}", msg, connection.toString(), closeEx);
+                    throw new SQLException(msg, closeEx);
                 }
             }
         }
