@@ -6,6 +6,8 @@ import com.example.shelldemo.util.CommandClassDiscoverer;
 import com.example.shelldemo.service.CommandService;
 import com.example.shelldemo.analysis.RuntimeAnalysisDocumentation;
 import picocli.CommandLine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.List;
@@ -14,6 +16,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 
 public class App {
+    private static final Logger log = LoggerFactory.getLogger(App.class);
     private final CommandRegistry commandRegistry;
     private final CommandService commandService;
     private final RuntimeAnalysisDocumentation runtimeAnalysisDocumentation;
@@ -64,8 +67,7 @@ public class App {
             int exitCode = commandLine.execute(args);
             System.exit(exitCode);
         } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Application error: {}", e.getMessage(), e);
             System.exit(1);
         }
     }

@@ -269,13 +269,7 @@ public class UnifiedDatabaseRunner implements Callable<Integer> {
             if (isQuery) {
                 try (var rs = stmt.getResultSet()) {
                     if (csvOutputFile != null) {
-                        try {
-                            rs.beforeFirst();
-                            writeResultsToCsv(rs, csvOutputFile);
-                            log.info("CSV output written to: {}", csvOutputFile);
-                        } catch (IOException e) {
-                            log.error("Error writing to CSV file: {}", e.getMessage());
-                        }
+                        writeQueryResultsToCsv(rs);
                     } else {
                         displayQueryResults(rs);
                     }
@@ -293,6 +287,16 @@ public class UnifiedDatabaseRunner implements Callable<Integer> {
             if (stopOnError) {
                 throw e;
             }
+        }
+    }
+
+    private void writeQueryResultsToCsv(ResultSet rs) throws SQLException {
+        try {
+            rs.beforeFirst();
+            writeResultsToCsv(rs, csvOutputFile);
+            log.info("CSV output written to: {}", csvOutputFile);
+        } catch (IOException e) {
+            log.error("Error writing to CSV file: {}", e.getMessage());
         }
     }
 
@@ -550,7 +554,8 @@ public class UnifiedDatabaseRunner implements Callable<Integer> {
                 DriverManager.registerDriver(new DriverShim(driver));
             }
         } catch (Exception e) {
-            log.error("Error loading driver from path: {}", e.getMessage());
+            log.error("Error loading driver from path {} - System classpath: {} - {}: {}", 
+                path, System.getProperty("java.class.path"), e.getClass().getSimpleName(), e.getMessage(), e);
         }
     }
 
