@@ -1,0 +1,126 @@
+---
+description: 
+globs: *.java
+alwaysApply: false
+---
+---
+description: Enforces proper error handling in catch blocks to avoid duplicate error reporting
+globs: **/*.java
+---
+# Error Handling Best Practices
+
+## Rule: Catch Block Error Handling
+
+- **Description**: In catch blocks, either log the error OR throw an exception, not both
+- **Rationale**: Prevents duplicate error reporting and reduces noise in logs
+- **Examples**:
+
+  ### Bad (Logging and Throwing)
+  ```java
+  try {
+      // code
+  } catch (SQLException e) {
+      log.error("Database error occurred", e);  // Don't do this
+      throw new DatabaseException("Operation failed", e);  // Don't do this
+  }
+  ```
+
+  ### Good (Logging Only)
+  ```java
+  try {
+      // code
+  } catch (SQLException e) {
+      log.error("Database error occurred: {}", e.getMessage());  // Do this
+      // Handle error appropriately
+  }
+  ```
+
+  ### Good (Throwing Only)
+  ```java
+  try {
+      // code
+  } catch (SQLException e) {
+      throw new DatabaseException("Database operation failed", e);  // Do this
+  }
+  ```
+
+## Guidelines
+
+1. **Choose One Approach**:
+   - Log the error if you can handle it locally
+   - Throw an exception if the error needs to be handled by a caller
+
+2. **When to Log**:
+   - When the error can be handled within the current method
+   - When you need to record the error but continue execution
+   - When the error is expected and part of normal flow
+
+3. **When to Throw**:
+   - When the error needs to be handled by a caller
+   - When the error prevents the method from completing its task
+   - When the error requires higher-level handling
+
+4. **Logging Best Practices**:
+   - Use appropriate log level (error, warn, info)
+   - Include relevant context in the message
+   - Don't log the stack trace if you're throwing the exception
+
+5. **Exception Throwing Best Practices**:
+   - Use specific exception types
+   - Include the original exception as cause
+   - Provide clear error messages
+
+## Anti-Patterns to Avoid
+
+1. **Double Reporting**:
+   ```java
+   catch (Exception e) {
+       log.error("Error occurred", e);  // Don't log
+       throw new CustomException("Error", e);  // And then throw
+   }
+   ```
+
+2. **Empty Catch Blocks**:
+   ```java
+   catch (Exception e) {
+       // Don't do this - silently swallowing exceptions
+   }
+   ```
+
+3. **Generic Logging**:
+   ```java
+   catch (Exception e) {
+       log.error("Error");  // Don't use generic messages
+   }
+   ```
+
+## Example Implementations
+
+### Logging Example
+```java
+try {
+    // code
+} catch (FileNotFoundException e) {
+    log.warn("Configuration file not found, using defaults: {}", e.getMessage());
+    // Continue with default configuration
+}
+```
+
+### Throwing Example
+```java
+try {
+    // code
+} catch (SQLException e) {
+    throw new DatabaseException("Failed to execute query: " + query, e);
+}
+```
+
+### Contextual Logging Example
+```java
+try {
+    // code
+} catch (IOException e) {
+    log.error("Failed to write to file {}: {}", fileName, e.getMessage());
+    // Handle the error locally
+}
+``` 

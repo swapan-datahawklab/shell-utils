@@ -1,74 +1,100 @@
 package com.example.shelldemo;
 
-import com.example.shelldemo.util.CommandRegistry;
-import com.example.shelldemo.util.ScriptGenerator;
-import com.example.shelldemo.util.CommandClassDiscoverer;
-import com.example.shelldemo.service.CommandService;
-import com.example.shelldemo.analysis.RuntimeAnalysisDocumentation;
-import picocli.CommandLine;
+import com.example.shelldemo.analysis.CommandService;
+import com.example.shelldemo.analysis.UtilCommandRegistry;
+import com.example.shelldemo.cli.exception.CommandExecutionException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
 import java.util.List;
-import java.util.Map;
-import java.nio.file.Path;
 import java.util.ArrayList;
 
 public class App {
     private static final Logger log = LoggerFactory.getLogger(App.class);
-    private final CommandRegistry commandRegistry;
     private final CommandService commandService;
-    private final RuntimeAnalysisDocumentation runtimeAnalysisDocumentation;
 
     public App() {
-        this.commandRegistry = new CommandRegistry(new ArrayList<>());
-        this.commandService = new CommandService(commandRegistry, new ScriptGenerator());
-        this.runtimeAnalysisDocumentation = new RuntimeAnalysisDocumentation();
+        this.commandService = new CommandService("com.example.shelldemo.commands");
+    }
+
+    public void run(String[] args) {
+        try {
+            List<Class<?>> commandClasses = discoverCommands();
+            UtilCommandRegistry.initialize(commandClasses);
+
+            if (args.length > 0) {
+                handleCommand(args);
+            } else {
+                startInteractiveMode();
+            }
+        } catch (CommandExecutionException e) {
+            log.error("Command execution failed", e);
+            System.exit(1);
+        } catch (Exception e) {
+            log.error("Application error", e);
+            System.exit(1);
+        }
+    }
+
+    private List<Class<?>> discoverCommands() {
+        // Implement command discovery logic
+        return new ArrayList<>();
+    }
+
+    private void handleCommand(String[] args) throws CommandExecutionException {
+        String command = args[0].toLowerCase();
+        try {
+            switch (command) {
+                case "help" -> {
+                    if (args.length > 1) {
+                        commandService.executeCommand("help", new String[]{args[1]});
+                    } else {
+                        commandService.executeCommand("help", new String[]{});
+                    }
+                }
+                case "doc" -> generateDocumentation(args);
+                default -> commandService.executeCommand(command, new String[]{});
+            }
+        } catch (CommandExecutionException e) {
+            log.error("Failed to execute command: " + command, e);
+            throw e;
+        }
+    }
+
+    private void generateDocumentation(String[] args) throws CommandExecutionException {
+        if (args.length < 2) {
+            try {
+                commandService.executeCommand("help", new String[]{"doc"});
+            } catch (CommandExecutionException e) {
+                log.error("Failed to show documentation help", e);
+                throw e;
+            }
+            return;
+        }
+        try {
+            commandService.generateDocumentation(args[1]);
+        } catch (Exception e) {
+            log.error("Documentation generation failed", e);
+            try {
+                commandService.executeCommand("help", new String[]{"Error generating documentation: " + e.getMessage()});
+            } catch (CommandExecutionException ex) {
+                log.error("Failed to show error help", ex);
+                throw ex;
+            }
+        }
+    }
+
+    private void startInteractiveMode() throws CommandExecutionException {
+        try {
+            commandService.executeCommand("help", new String[]{});
+        } catch (CommandExecutionException e) {
+            log.error("Failed to start interactive mode", e);
+            throw e;
+        }
     }
 
     public static void main(String[] args) {
-        App app = new App();
-        app.run(args);
-    }
-
-    public void run(String... args) {
-        try {
-            // Initialize command registry
-            List<Class<?>> commandClasses = CommandClassDiscoverer.discoverCommandClasses("com.example");
-            commandRegistry.initialize(commandClasses);
-
-            // Generate scripts
-            File scriptDir = new File("scripts");
-            if (!scriptDir.exists()) {
-                scriptDir.mkdirs();
-            }
-            commandService.generateScripts(scriptDir);
-
-            // Generate documentation
-            File docDir = new File("docs");
-            if (!docDir.exists()) {
-                docDir.mkdirs();
-            }
-            commandService.generateDocumentation("json", false, new File(docDir, "commands.json"));
-            commandService.generateDocumentation("markdown", false, new File(docDir, "commands.md"));
-            commandService.generateDocumentation("text", false, new File(docDir, "commands.txt"));
-
-            // Generate runtime analysis documentation
-            Map<String, Object> templateVars = Map.of("timestamp", System.currentTimeMillis());
-            Path outputPath = Path.of("docs", "runtime-analysis.html");
-            runtimeAnalysisDocumentation.generateDocumentation(templateVars, outputPath);
-
-            // Parse and execute commands
-            CommandLine commandLine = new CommandLine(new Object());
-            for (Class<?> commandClass : commandClasses) {
-                commandLine.addSubcommand(commandClass);
-            }
-            int exitCode = commandLine.execute(args);
-            System.exit(exitCode);
-        } catch (Exception e) {
-            log.error("Application error: {}", e.getMessage(), e);
-            System.exit(1);
-        }
+        log.info("Starting application with args: {}", (Object) args);
+        new App().run(args);
     }
 } 

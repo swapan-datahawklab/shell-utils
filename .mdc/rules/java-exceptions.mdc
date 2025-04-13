@@ -1,0 +1,109 @@
+---
+description: 
+globs: *.java
+alwaysApply: false
+---
+---
+description: Enforces the use of dedicated exceptions instead of generic ones
+globs: **/*.java
+---
+# Exception Handling Best Practices
+
+## Rule: Use Dedicated Exceptions
+
+- **Description**: Always use dedicated exceptions instead of generic ones (Exception, RuntimeException, etc.)
+- **Rationale**: Specific exceptions provide better error handling, debugging, and maintainability
+- **Examples**:
+
+  ### Bad
+  ```java
+  try {
+      // code
+  } catch (Exception e) {
+      throw new Exception("Error occurred");
+  }
+  ```
+
+  ### Good
+  ```java
+  try {
+      // code
+  } catch (SQLException e) {
+      throw new DatabaseException("Database operation failed", e);
+  }
+  ```
+
+## Exception Creation Guidelines
+
+1. **Naming Convention**:
+   - Name should end with "Exception"
+   - Should be descriptive of the specific error condition
+   - Example: `DatabaseException`, `ConfigurationException`, `ValidationException`
+
+2. **Inheritance**:
+   - Extend appropriate base exception class
+   - Use checked exceptions for recoverable errors
+   - Use unchecked exceptions for programming errors
+
+3. **Constructor Requirements**:
+   - Must have at least two constructors:
+     ```java
+     public CustomException(String message)
+     public CustomException(String message, Throwable cause)
+     ```
+
+4. **Exception Hierarchy**:
+   - Create a hierarchy of exceptions for related error types
+   - Example:
+     ```
+     BaseException
+     ├── DatabaseException
+     │   ├── ConnectionException
+     │   └── QueryException
+     ├── ConfigurationException
+     └── ValidationException
+     ```
+
+## Common Generic Exceptions to Avoid
+
+- `Exception`
+- `RuntimeException`
+- `Throwable`
+- `Error`
+
+## When to Create New Exceptions
+
+Create a new dedicated exception when:
+1. The error condition is specific to your domain
+2. You need to handle the error differently from existing exceptions
+3. The error requires additional context or data
+4. The error is likely to be caught and handled specifically
+
+## When to Use Existing Exceptions
+
+Use existing exceptions when:
+1. The error condition is already well-defined by the JDK
+2. The error is specific to a third-party library
+3. The error is a standard Java error (e.g., `NullPointerException`, `IllegalArgumentException`)
+
+## Error Message Guidelines
+
+1. Be specific about what went wrong
+2. Include relevant context
+3. Use proper grammar and punctuation
+4. Avoid technical jargon in user-facing messages
+5. Include actionable information when possible
+
+## Example Implementation
+
+```java
+public class DatabaseException extends BaseException {
+    public DatabaseException(String message) {
+        super(message);
+    }
+
+    public DatabaseException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
+``` 

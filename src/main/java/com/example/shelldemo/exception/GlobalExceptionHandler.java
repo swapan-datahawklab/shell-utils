@@ -1,32 +1,52 @@
 package com.example.shelldemo.exception;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.function.Function;
 
 public class GlobalExceptionHandler {
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
-    
-    public static <T extends BaseException> T handleException(String context, Exception e) {
-        String errorMessage = String.format("Error in %s: %s", context, e.getMessage());
-        log.error(errorMessage, e);
-        return (T) new BaseException(errorMessage, context, "", e) {};
+    private GlobalExceptionHandler() {
+        throw new UnsupportedOperationException("Utility class");
     }
     
-    public static <T extends BaseException> T handleException(String context, String additionalInfo, Exception e) {
-        String errorMessage = String.format("Error in %s - %s: %s", context, additionalInfo, e.getMessage());
-        log.error(errorMessage, e);
-        return (T) new BaseException(errorMessage, context, additionalInfo, e) {};
-    }
-    
-    public static <T extends BaseException> T handleException(Class<T> exceptionClass, String context, String additionalInfo, Exception e) {
-        String errorMessage = String.format("Error in %s - %s: %s", context, additionalInfo, e.getMessage());
-        log.error(errorMessage, e);
-        try {
-            return exceptionClass.getConstructor(String.class, String.class, String.class, Throwable.class)
-                    .newInstance(errorMessage, context, additionalInfo, e);
-        } catch (Exception ex) {
-            log.error("Failed to create exception instance", ex);
-            return (T) new BaseException(errorMessage, context, additionalInfo, e) {};
+    private static class DefaultException extends BaseException {
+        private static final long serialVersionUID = 1L;
+
+        public DefaultException(String message, Throwable cause) {
+            super(message, cause);
         }
+
+        public DefaultException(String message, String additionalInfo, Throwable cause) {
+            super(message, additionalInfo, cause);
+        }
+
+        public DefaultException(String message, String additionalInfo, String collectorName, Throwable cause) {
+            super(message, additionalInfo, collectorName, cause);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends BaseException> T createException(String message, Throwable cause) {
+        return (T) new DefaultException(message, cause);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends BaseException> T createException(String message, String additionalInfo, Throwable cause) {
+        return (T) new DefaultException(message, additionalInfo, cause);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends BaseException> T createException(String message, String additionalInfo, String collectorName, Throwable cause) {
+        return (T) new DefaultException(message, additionalInfo, collectorName, cause);
+    }
+
+    public static <T extends BaseException> Function<Throwable, T> handleException(String message) {
+        return throwable -> createException(message, throwable);
+    }
+    
+    public static <T extends BaseException> Function<Throwable, T> handleException(String message, String additionalInfo) {
+        return throwable -> createException(message, additionalInfo, throwable);
+    }
+    
+    public static <T extends BaseException> Function<Throwable, T> handleException(String message, String additionalInfo, String collectorName) {
+        return throwable -> createException(message, additionalInfo, collectorName, throwable);
     }
 } 

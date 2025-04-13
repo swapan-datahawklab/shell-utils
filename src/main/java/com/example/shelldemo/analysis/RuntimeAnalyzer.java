@@ -2,7 +2,6 @@ package com.example.shelldemo.analysis;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.List;
@@ -19,35 +18,61 @@ import javax.management.ObjectName;
 import java.util.stream.Collectors;
 
 @Aspect
-@Component
 public class RuntimeAnalyzer {
     private static final Logger log = LoggerFactory.getLogger(RuntimeAnalyzer.class);
     private final MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
+    private final CommandService commandService;
     private boolean isRunning = false;
     private final Map<String, CommandMetrics> commandMetrics = new ConcurrentHashMap<>();
     private final Map<String, CommandUsageStats> usageStats = new ConcurrentHashMap<>();
 
+    public RuntimeAnalyzer(CommandService commandService) {
+        this.commandService = commandService;
+    }
+
     public void start() {
-        isRunning = true;
-        log.info("Runtime analysis started");
+        if (!isRunning) {
+            try {
+                // Attach agent to current process
+                String pid = String.valueOf(ProcessHandle.current().pid());
+                String agentJarPath = System.getProperty("agent.jar.path", "runtime-agent.jar");
+                
+                AgentAttacher.attachToProcess(pid, agentJarPath);
+                RuntimeAgent.initialize();
+                
+                isRunning = true;
+                log.info("Runtime analysis started for process {}", pid);
+            } catch (Exception e) {
+                log.error("Failed to start runtime analysis", e);
+            }
+        }
     }
 
     public void stop() {
-        isRunning = false;
-        log.info("Runtime analysis stopped");
+        if (isRunning) {
+            RuntimeAgent.shutdown();
+            isRunning = false;
+            log.info("Runtime analysis stopped");
+        }
     }
 
     public boolean isRunning() {
         return isRunning;
     }
 
-    @Around("execution(* com.example.cli.*.*(..))")
+    @Around("execution(* com.example.shelldemo.cli.*.*(..))")
     public Object around(ProceedingJoinPoint point) throws Throwable {
         if (!isRunning) {
             return point.proceed();
         }
 
         String commandName = point.getSignature().getDeclaringType().getSimpleName();
+        CommandData commandData = commandService.getCommandData(commandName);
+        
+        if (commandData == null) {
+            return point.proceed();
+        }
+
         CommandMetrics metrics = commandMetrics.computeIfAbsent(commandName, 
             k -> new CommandMetrics());
         CommandUsageStats stats = usageStats.computeIfAbsent(commandName, 

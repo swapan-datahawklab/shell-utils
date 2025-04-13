@@ -1,10 +1,6 @@
 package com.example.shelldemo.monitoring;
 
-import com.example.shelldemo.monitoring.collector.CommandMetricsCollector;
-import com.example.shelldemo.monitoring.collector.JvmMetricsCollector;
-import com.example.shelldemo.monitoring.collector.SystemMetricsCollector;
-import com.example.shelldemo.monitoring.model.MetricCollector;
-import com.example.shelldemo.monitoring.model.MetricEvent;
+
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,21 +1,21 @@
 package com.example.shelldemo.exception;
 
-public abstract class BaseException extends Exception {
+public class BaseException extends Exception {
     private static final long serialVersionUID = 1L;
-    private final String context;
-    private final String additionalInfo;
 
-    protected BaseException(String message, String context, String additionalInfo, Throwable cause) {
+    public BaseException(String message) {
+        super(message);
+    }
+
+    public BaseException(String message, Throwable cause) {
         super(message, cause);
-        this.context = context;
-        this.additionalInfo = additionalInfo;
     }
 
-    public String getContext() {
-        return context;
+    public BaseException(String message, String additionalInfo, Throwable cause) {
+        super(message + " - " + additionalInfo, cause);
     }
 
-    public String getAdditionalInfo() {
-        return additionalInfo;
+    public BaseException(String message, String additionalInfo, String collectorName, Throwable cause) {
+        super(message + " - " + additionalInfo + " - " + collectorName, cause);
     }
 } 

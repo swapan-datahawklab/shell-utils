@@ -1,0 +1,172 @@
+---
+description: 
+globs: ,java
+alwaysApply: false
+---
+---
+description: Enforces checking for existing functionality before adding new code to prevent duplication and ensure proper code reuse.
+globs: **/*.java
+---
+# Code Reuse and Functionality Check Rule
+
+This rule enforces best practices for checking existing functionality before adding new code. Following these guidelines helps prevent code duplication, maintain consistency, and leverage existing implementations.
+
+## 1. Before Adding New Code
+
+### 1.1 Code Search Requirements
+
+- **Search Existing Codebase:**
+  - Use semantic search to find similar functionality
+  - Check for existing utility classes or helper methods
+  - Look for similar patterns or implementations
+  - Search for related configuration or properties
+
+- **Documentation Review:**
+  - Check README and documentation files
+  - Review API documentation
+  - Look for existing examples or usage patterns
+  - Check for deprecated or alternative implementations
+
+### 1.2 Code Analysis Steps
+
+- **Functionality Analysis:**
+  - Identify the core requirements
+  - Map to existing features
+  - Check for partial implementations
+  - Look for extensible patterns
+
+- **Dependency Check:**
+  - Review existing dependencies
+  - Check for similar third-party libraries
+  - Verify version compatibility
+  - Look for built-in solutions
+
+## 2. When to Create New Code
+
+### 2.1 Valid Reasons for New Code
+
+- **New Business Requirement:**
+  - Document the business case
+  - Show why existing code cannot be used
+  - Provide examples of why extension is not possible
+
+- **Technical Limitations:**
+  - Document technical constraints
+  - Show why existing solutions don't work
+  - Provide performance or security considerations
+
+- **Architectural Changes:**
+  - Document architectural needs
+  - Show alignment with system design
+  - Provide migration strategy if needed
+
+### 2.2 Invalid Reasons for New Code
+
+- **Not Knowing Existing Code:**
+  - Must search codebase first
+  - Document search attempts
+  - Show why existing code wasn't suitable
+
+- **Personal Preference:**
+  - Must use existing patterns
+  - Follow established conventions
+  - Maintain consistency
+
+- **Quick Fixes:**
+  - Must consider long-term impact
+  - Document technical debt
+  - Plan for proper implementation
+
+## 3. Implementation Guidelines
+
+### 3.1 Code Search Process
+
+```java
+// BAD: Adding new functionality without checking existing code
+public class NewFeature {
+    public void doSomething() {
+        // New implementation without checking existing code
+    }
+}
+
+// GOOD: Checking existing code first
+public class FeatureExtension {
+    private final ExistingFeature existingFeature;
+    
+    public FeatureExtension(ExistingFeature existingFeature) {
+        this.existingFeature = existingFeature;
+    }
+    
+    public void enhancedFunctionality() {
+        // Extend existing functionality
+        existingFeature.doSomething();
+        // Add new capabilities
+    }
+}
+```
+
+### 3.2 Documentation Requirements
+
+- **Search Documentation:**
+  - List files searched
+  - Document search terms used
+  - Note relevant findings
+  - Explain why existing code wasn't suitable
+
+- **Implementation Documentation:**
+  - Document why new code is needed
+  - Show how it differs from existing code
+  - Explain integration points
+  - Note any technical debt
+
+## 4. Review Process
+
+### 4.1 Code Review Checklist
+
+- [ ] Searched existing codebase
+- [ ] Checked documentation
+- [ ] Reviewed similar features
+- [ ] Considered extensions
+- [ ] Documented findings
+- [ ] Justified new code
+
+### 4.2 Common Pitfalls
+
+- **Duplicate Functionality:**
+  - Multiple implementations of same feature
+  - Inconsistent behavior
+  - Maintenance overhead
+
+- **Missed Opportunities:**
+  - Not using existing utilities
+  - Reinventing solutions
+  - Ignoring patterns
+
+## 5. Tools and Resources
+
+### 5.1 Recommended Tools
+
+- **Code Search:**
+  - IDE search functionality
+  - Git grep
+  - Semantic code search
+  - Documentation search
+
+- **Analysis Tools:**
+  - Code coverage tools
+  - Dependency analyzers
+  - Architecture review tools
+
+### 5.2 Documentation Resources
+
+- **Internal Documentation:**
+  - README files
+  - API documentation
+  - Architecture diagrams
+  - Design documents
+
+- **External Resources:**
+  - Framework documentation
+  - Library documentation
+  - Best practices guides
+  - Community resources 
