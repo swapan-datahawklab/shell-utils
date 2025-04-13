@@ -38,7 +38,6 @@ import picocli.CommandLine.Parameters;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * A unified database runner that combines CLI and script execution functionality.
@@ -678,11 +677,11 @@ public class RunnerDatabase implements Callable<Integer> {
 
         try {
             testNoArgs(cmd, results);
-            testValidArgs(cmd, results);
-            testInvalidArgs(cmd, results);
-            testEdgeCases(cmd, results);
+            testValidArgs(results);
+            testInvalidArgs(results);
+            testEdgeCases(results);
         } catch (Exception e) {
-            results.recordFailure(e);
+            results.recordFailure("testCommand", e);
         }
     }
 
@@ -695,17 +694,17 @@ public class RunnerDatabase implements Callable<Integer> {
         }
     }
 
-    private void testValidArgs(CommandData cmd, CommandTestResults results) {
+    private void testValidArgs(CommandTestResults results) {
         // Implement valid argument testing
         results.recordSuccess("testValidArgs");
     }
 
-    private void testInvalidArgs(CommandData cmd, CommandTestResults results) {
+    private void testInvalidArgs(CommandTestResults results) {
         // Implement invalid argument testing
         results.recordSuccess("testInvalidArgs");
     }
 
-    private void testEdgeCases(CommandData cmd, CommandTestResults results) {
+    private void testEdgeCases(CommandTestResults results) {
         // Implement edge case testing
         results.recordSuccess("testEdgeCases");
     }
@@ -726,7 +725,7 @@ public class RunnerDatabase implements Callable<Integer> {
                 }
             })
             .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     public static class CommandTestResults {
@@ -748,10 +747,6 @@ public class RunnerDatabase implements Callable<Integer> {
 
         public void recordFailure(String testName, Exception e) {
             results.add(new TestResult(testName, false, e));
-            overallSuccess = false;
-        }
-
-        public void recordFailure(Exception e) {
             overallSuccess = false;
         }
 

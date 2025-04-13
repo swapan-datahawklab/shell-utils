@@ -37,7 +37,7 @@ public class GenerateScriptsCommand implements Runnable {
             
             log.info("Script generation completed successfully");
         } catch (Exception e) {
-            throw new RuntimeException("Failed to generate scripts: " + e.getMessage(), e);
+            throw new ScriptGenerationException("Failed to generate scripts: " + e.getMessage(), e);
         }
     }
 } 

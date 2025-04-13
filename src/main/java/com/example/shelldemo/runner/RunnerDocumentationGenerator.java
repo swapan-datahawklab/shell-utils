@@ -60,31 +60,35 @@ public class RunnerDocumentationGenerator {
     private final RuntimeAnalysisDocumentation documentation;
 
     public RunnerDocumentationGenerator() {
-        this.documentation = new RuntimeAnalysisDocumentation();
+        try {
+            this.documentation = new RuntimeAnalysisDocumentation();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to initialize documentation generator", e);
+        }
     }
 
     public void generateDocumentation(List<Class<?>> commandClasses) {
         try {
-            Map<String, Object> templateVars = new HashMap<>();
-            templateVars.put(COMMANDS_KEY, collectCommandData(commandClasses));
-            templateVars.put("examples", collectExampleData());
-            templateVars.put("validation", collectValidationData());
-            templateVars.put("info", collectApiInfo());
+            Map<String, Object> vars = new HashMap<>();
+            vars.put(COMMANDS_KEY, collectCommandData(commandClasses));
+            vars.put("examples", collectExampleData());
+            vars.put("validation", collectValidationData());
+            vars.put("info", collectApiInfo());
 
             if (generateHtml) {
-                documentation.generateDocumentation(templateVars, Path.of("documentation.html"));
+                documentation.generateDocumentation(vars, Path.of("documentation.html"));
                 copyStaticResources();
             }
             if (generateConfig != null) {
                 String configFile = "application." + generateConfig.toLowerCase();
-                documentation.generateDocumentation(templateVars, Path.of(configFile));
+                documentation.generateDocumentation(vars, Path.of(configFile));
             }
             if (generateApiDocs != null) {
                 String extension = getApiDocExtension(generateApiDocs);
-                documentation.generateDocumentation(templateVars, Path.of("api." + extension));
+                documentation.generateDocumentation(vars, Path.of("api." + extension));
             }
             if (generateTests != null) {
-                documentation.generateDocumentation(templateVars, Path.of("CommandTest.java"));
+                documentation.generateDocumentation(vars, Path.of("CommandTest.java"));
             }
         } catch (Exception e) {
             log.error("Error generating documentation", e);

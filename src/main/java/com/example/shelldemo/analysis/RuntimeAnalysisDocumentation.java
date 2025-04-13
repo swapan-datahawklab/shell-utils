@@ -14,13 +14,11 @@ import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.Map;
 
-
-
 public class RuntimeAnalysisDocumentation {
     private static final Logger log = LoggerFactory.getLogger(RuntimeAnalysisDocumentation.class);
     private final Configuration freemarkerConfig;
 
-    public RuntimeAnalysisDocumentation() {
+    public RuntimeAnalysisDocumentation() throws IOException {
         freemarkerConfig = new Configuration(Configuration.VERSION_2_3_31);
         freemarkerConfig.setClassForTemplateLoading(this.getClass(), "/templates");
         freemarkerConfig.setDefaultEncoding("UTF-8");
